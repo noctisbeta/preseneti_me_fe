@@ -1,101 +1,168 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
+
+const prependHttps = (url: string) => {
+  if (!url.match(/^https?:\/\//i)) {
+    return `https://${url}`;
+  }
+  return url;
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [url, setUrl] = useState("");
+  const [shortenedUrl, setShortenedUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const formattedUrl = prependHttps(url.trim());
+
+      const response = await fetch("https://preseneti.me/shorten", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ longUrl: formattedUrl }),
+      });
+
+      if (!response.ok) throw new Error("Failed to shorten URL");
+
+      const data = await response.json();
+      setShortenedUrl(data.shortUrl);
+    } catch (err) {
+      setError("Failed to shorten URL. Please try again.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shortenedUrl);
+      toast.success("Copied!", {
+        position: "bottom-center",
+        style: {
+          background: "rgba(255, 255, 255, 0.9)",
+          backdropFilter: "blur(10px)",
+          color: "#4B5563",
+          padding: "8px 16px",
+          borderRadius: "8px",
+          fontSize: "14px",
+          maxWidth: "200px",
+        },
+        duration: 1500,
+      });
+    } catch (err) {
+      toast.error("Failed to copy", {
+        position: "bottom-center",
+        style: {
+          background: "rgba(239, 68, 68, 0.9)",
+          backdropFilter: "blur(10px)",
+          color: "white",
+          padding: "8px 16px",
+          borderRadius: "8px",
+          fontSize: "14px",
+          maxWidth: "200px",
+        },
+      });
+      console.error("Failed to copy URL to clipboard", err);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-radial from-gray-900 via-purple-900 to-gray-950 flex items-center justify-center">
+      <Toaster position="top-center" />
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-2xl mx-auto bg-gray-900/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-gray-800/50">
+          <h1 className="text-4xl font-bold text-center mb-8">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-300">
+              Shortener
+            </span>
+          </h1>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="relative">
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="Enter URL (e.g., youtube.com)"
+                required
+                pattern="^(?:https?:\/\/)?(?:[\w-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$"
+                className="w-full p-4 bg-gray-800/50 border border-gray-700/50 rounded-lg 
+                          text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-purple-500/50 
+                          focus:border-transparent backdrop-blur-sm transition"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full p-4 bg-purple-600 text-white rounded-lg font-semibold
+                        transform hover:scale-[1.02] transition-all duration-200 
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                        hover:bg-purple-500 hover:shadow-lg hover:shadow-purple-500/20"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin" />
+                  <span>Shortening...</span>
+                </div>
+              ) : (
+                "Shorten URL"
+              )}
+            </button>
+          </form>
+
+          {error && (
+            <div className="mt-6 p-4 bg-red-900/20 border border-red-800/50 rounded-lg">
+              <p className="text-red-200 text-center">{error}</p>
+            </div>
+          )}
+
+          {shortenedUrl && (
+            <div className="mt-8 p-6 bg-gray-800/30 rounded-lg border border-gray-700/50">
+              <p className="text-gray-400 text-sm mb-2">Your shortened URL:</p>
+              <div className="flex items-center space-x-3">
+                <a
+                  href={shortenedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-300 hover:text-purple-200 break-all flex-1"
+                >
+                  {shortenedUrl}
+                </a>
+                <button
+                  onClick={copyToClipboard}
+                  className="p-2 hover:bg-purple-600/20 rounded-lg transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5 text-purple-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }

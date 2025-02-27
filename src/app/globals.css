@@ -22,3 +22,21 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.radial-gradient {
+  background: radial-gradient(
+    circle at center,
+    theme("colors.indigo.300"),
+    theme("colors.purple.400") 50%,
+    theme("colors.pink.300")
+  );
+}
+
+.bg-gradient-radial {
+  background: radial-gradient(
+    circle at center,
+    var(--tw-gradient-from),
+    var(--tw-gradient-via) 45%,
+    var(--tw-gradient-to)
+  );
+}
