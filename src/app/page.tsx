@@ -24,7 +24,7 @@ export default function Home() {
     try {
       const formattedUrl = prependHttps(url.trim());
 
-      const response = await fetch("https://preseneti.me/shorten", {
+      const response = await fetch("https://api.preseneti.me/shorten", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
