@@ -3,11 +3,22 @@
 import { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
-const prependHttps = (url: string) => {
-  if (!url.match(/^https?:\/\//i)) {
-    return `https://${url}`;
+const isValidUrl = (urlString: string): boolean => {
+  try {
+    new URL(urlString);
+    return true;
+  } catch {
+    try {
+      new URL(`https://${urlString}`);
+      return true;
+    } catch {
+      return false;
+    }
   }
-  return url;
+};
+
+const prependHttps = (url: string) => {
+  return url.startsWith("http") ? url : `https://${url}`;
 };
 
 export default function Home() {
@@ -22,6 +33,10 @@ export default function Home() {
     setError("");
 
     try {
+      if (!isValidUrl(url.trim())) {
+        throw new Error("Invalid URL format");
+      }
+
       const formattedUrl = prependHttps(url.trim());
 
       const response = await fetch("https://api.preseneti.me/shorten", {
@@ -96,7 +111,6 @@ export default function Home() {
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Enter URL (e.g., youtube.com)"
                 required
-                pattern="^(?:https?:\/\/)?(?:[\w-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$"
                 className="w-full p-4 bg-gray-800/50 border border-gray-700/50 rounded-lg 
                           text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-purple-500/50 
                           focus:border-transparent backdrop-blur-sm transition"
